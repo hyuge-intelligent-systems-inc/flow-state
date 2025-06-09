@@ -3,7 +3,7 @@ The Flow State time tracker app by Hyuge Intelligent Systems Inc.
 FlowState: Human-Centered Productivity Intelligence
 The first productivity app that works with your psychology, not against it.
 FlowState is a privacy-first, AI-enhanced productivity system that adapts to your real-world constraints while respecting your individual differences, cultural values, and life circumstances.
-🧠 The Philosophy
+🧠 The Philosophy:
 Most productivity apps assume you need to be optimized. FlowState assumes you need to be understood.
 Built on evidence-based psychology, behavioral science, and genuine respect for human complexity, FlowState provides:
 
