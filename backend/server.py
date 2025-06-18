@@ -778,7 +778,7 @@ def demo_page():
         <div id="results"></div>
 
         <div class="demo-section">
-            <h3>✨ FlowState Principles in Action</h3>
+            <h3>FlowState Principles in Action</h3>
             <ul style="text-align: left; color: #374151;">
                 <li><strong>User Agency:</strong> All suggestions can be ignored or modified</li>
                 <li><strong>Honest Limitations:</strong> Confidence levels on all insights</li>
