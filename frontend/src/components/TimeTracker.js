@@ -4,6 +4,8 @@ import { apiService } from '../services/api';
 const TimeTracker = ({ user }) => {
   const [activeSessions, setActiveSessions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [recognition, setRecognition] = useState(null);
   const [sessionForm, setSessionForm] = useState({
     task_description: '',
     main_tag: '',
@@ -35,11 +37,89 @@ const TimeTracker = ({ user }) => {
   useEffect(() => {
     loadActiveSessions();
     loadUserTags();
+    initializeSpeechRecognition();
     
     // Poll for session updates
     const interval = setInterval(loadActiveSessions, 10000);
     return () => clearInterval(interval);
   }, [user]);
+
+  const initializeSpeechRecognition = () => {
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognitionInstance = new SpeechRecognition();
+      
+      recognitionInstance.continuous = true;
+      recognitionInstance.interimResults = true;
+      recognitionInstance.lang = 'en-US';
+      
+      recognitionInstance.onresult = (event) => {
+        const last = event.results.length - 1;
+        const command = event.results[last][0].transcript.toLowerCase().trim();
+        
+        if (event.results[last].isFinal) {
+          processVoiceCommand(command);
+        }
+      };
+      
+      recognitionInstance.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        setIsListening(false);
+      };
+      
+      recognitionInstance.onend = () => {
+        setIsListening(false);
+      };
+      
+      setRecognition(recognitionInstance);
+    }
+  };
+
+  const processVoiceCommand = (command) => {
+    console.log('Voice command:', command);
+    
+    // Check for start command
+    if (command.includes('start') || command.includes('begin')) {
+      if (sessionForm.main_tag) {
+        handleStartSession();
+        return;
+      }
+    }
+    
+    // Parse tag commands like "work client project" or "learning react"
+    const words = command.split(' ');
+    if (words.length >= 1) {
+      const mainTag = words[0];
+      const subTag = words.slice(1).join('-');
+      
+      // Check if it's a valid tag
+      const isValidMainTag = commonTags.some(tag => tag.main.includes(mainTag)) || 
+                            userTags.some(tag => tag.includes(mainTag));
+      
+      if (isValidMainTag) {
+        setSessionForm(prev => ({
+          ...prev,
+          main_tag: mainTag,
+          sub_tag: subTag || ''
+        }));
+      }
+    }
+  };
+
+  const toggleVoiceRecognition = () => {
+    if (!recognition) {
+      alert('Speech recognition is not supported in your browser');
+      return;
+    }
+    
+    if (isListening) {
+      recognition.stop();
+      setIsListening(false);
+    } else {
+      recognition.start();
+      setIsListening(true);
+    }
+  };
 
   const loadActiveSessions = async () => {
     try {
@@ -59,8 +139,8 @@ const TimeTracker = ({ user }) => {
     }
   };
 
-  const handleStartSession = async (e) => {
-    e.preventDefault();
+  const handleStartSession = async (e = null) => {
+    if (e) e.preventDefault();
     if (!sessionForm.main_tag.trim()) {
       alert('Please enter a main tag (e.g., work, learning, exercise)');
       return;
@@ -199,6 +279,39 @@ const TimeTracker = ({ user }) => {
           </div>
         </div>
       )}
+
+      {/* Voice Control */}
+      <div className="flow-card bg-purple-50 border border-purple-200">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-purple-900">Voice Control</h3>
+            <p className="text-sm text-purple-700 mt-1">
+              Say your tag and sub-tag, then say "start" to begin tracking
+            </p>
+            <p className="text-xs text-purple-600 mt-1">
+              Example: "work client project" then "start"
+            </p>
+          </div>
+          <button
+            onClick={toggleVoiceRecognition}
+            className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
+              isListening 
+                ? 'bg-red-500 text-white hover:bg-red-600' 
+                : 'bg-purple-500 text-white hover:bg-purple-600'
+            }`}
+          >
+            {isListening ? 'Stop Listening' : 'Start Voice Control'}
+          </button>
+        </div>
+        {isListening && (
+          <div className="mt-3 p-3 bg-purple-100 rounded-lg">
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+              <span className="text-sm text-purple-800">Listening for voice commands...</span>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Start New Session */}
       <div className="flow-card">
@@ -348,7 +461,7 @@ const TimeTracker = ({ user }) => {
                   Starting Session...
                 </span>
               ) : (
-                '🚀 Start New Session'
+                'Start New Session'
               )}
             </button>
           </div>
@@ -492,16 +605,17 @@ const TimeTracker = ({ user }) => {
         <div className="flex items-start space-x-3">
           <div className="flex-shrink-0">
             <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-              <span className="text-blue-600">💡</span>
+              <span className="text-blue-600">i</span>
             </div>
           </div>
           <div>
             <h4 className="font-medium text-blue-900 mb-2">Enhanced Multi-Session Tracking</h4>
             <div className="text-sm text-blue-800 space-y-1">
-              <p>• <strong>Multiple Sessions:</strong> Track different activities simultaneously</p>
-              <p>• <strong>Your Tags:</strong> Create hashtag-like categories that make sense to you</p>
-              <p>• <strong>Flexible Structure:</strong> Main tag + optional sub-tag (e.g., #work/client-project)</p>
-              <p>• <strong>Real Work Patterns:</strong> Reflects how people actually multitask</p>
+              <p><strong>Multiple Sessions:</strong> Track different activities simultaneously</p>
+              <p><strong>Your Tags:</strong> Create hashtag-like categories that make sense to you</p>
+              <p><strong>Flexible Structure:</strong> Main tag + optional sub-tag (e.g., #work/client-project)</p>
+              <p><strong>Voice Control:</strong> Use voice commands to set tags and start sessions</p>
+              <p><strong>Real Work Patterns:</strong> Reflects how people actually multitask</p>
             </div>
           </div>
         </div>
