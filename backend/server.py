@@ -715,35 +715,35 @@ def demo_page():
         </div>
 
         <div class="demo-section">
-            <h3>🚀 Live FlowState Demo</h3>
+            <h3>Live FlowState Demo</h3>
             <p>Experience the complete FlowState workflow:</p>
             
             <div class="workflow">
                 <div class="step" id="step-1">
-                    <div>👤</div>
+                    <div>User</div>
                     <h4>Create User</h4>
                     <p>Generate demo account</p>
                 </div>
                 <div class="step" id="step-2">
-                    <div>▶️</div>
+                    <div>Play</div>
                     <h4>Start Session</h4>
                     <p>Begin productivity tracking</p>
                 </div>
                 <div class="step" id="step-3">
-                    <div>⏸️</div>
+                    <div>Pause</div>
                     <h4>End Session</h4>
                     <p>Complete with feedback</p>
                 </div>
                 <div class="step" id="step-4">
-                    <div>📊</div>
+                    <div>Chart</div>
                     <h4>View Analytics</h4>
                     <p>See insights & patterns</p>
                 </div>
             </div>
 
             <div style="text-align: center; margin: 20px 0;">
-                <button class="btn" onclick="startDemo()">🎯 Start Complete Demo</button>
-                <button class="btn btn-secondary" onclick="resetDemo()">🔄 Reset Demo</button>
+                <button class="btn" onclick="startDemo()">Start Complete Demo</button>
+                <button class="btn btn-secondary" onclick="resetDemo()">Reset Demo</button>
             </div>
 
             <div class="metrics" id="metrics" style="display: none;">
