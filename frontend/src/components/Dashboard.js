@@ -299,7 +299,7 @@ const Dashboard = ({ user }) => {
         <div className="flow-card border-2 border-dashed border-gray-300">
           <div className="text-center">
             <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-flow-blue bg-opacity-10">
-              <span className="text-2xl">🚀</span>
+              <span className="text-2xl">START</span>
             </div>
             <h3 className="mt-2 text-sm font-medium text-flow-dark">Start Your First Session</h3>
             <p className="mt-1 text-sm text-flow-gray">
