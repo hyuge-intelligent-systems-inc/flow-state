@@ -59,7 +59,7 @@ const Welcome = ({ onUserLogin }) => {
         </div>
 
         <div className="mb-6 p-4 bg-flow-light rounded-lg">
-          <h3 className="font-semibold text-flow-dark mb-2">🧠 The Philosophy</h3>
+          <h3 className="font-semibold text-flow-dark mb-2">The Philosophy</h3>
           <p className="text-sm text-flow-gray">
             Most productivity apps assume you need to be optimized. 
             FlowState assumes you need to be understood.
