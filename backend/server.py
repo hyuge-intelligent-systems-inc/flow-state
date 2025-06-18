@@ -316,7 +316,7 @@ async def serve_react_app(full_path: str):
         with open("/app/frontend/build/index.html", "r") as f:
             return HTMLResponse(content=f.read())
     except FileNotFoundError:
-        # If React build doesn't exist, serve our demo page
+        # If React build doesn't exist, serve our demo page as fallback
         return demo_page()
 
 # In-memory storage for demo (in production, use proper database)
