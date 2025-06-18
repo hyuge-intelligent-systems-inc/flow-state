@@ -1,0 +1,60 @@
+/* Additional custom styles for FlowState */
+
+.App {
+  text-align: center;
+}
+
+.session-timer {
+  font-family: 'Inter', monospace;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.productivity-score {
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.insight-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.insight-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, #3B82F6, #8B5CF6, #10B981);
+}
+
+.pattern-visualization {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .flow-card {
+    @apply p-4;
+  }
+  
+  .session-timer {
+    font-size: 1.5rem;
+  }
+}
+
+/* Focus states for accessibility */
+.focus-visible {
+  outline: 2px solid #3B82F6;
+  outline-offset: 2px;
+}
+
+/* Dark mode support (if needed in future) */
+@media (prefers-color-scheme: dark) {
+  /* Add dark mode styles here if needed */
+}
