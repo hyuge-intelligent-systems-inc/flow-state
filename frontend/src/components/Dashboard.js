@@ -32,8 +32,11 @@ const Dashboard = ({ user }) => {
 
   const loadCurrentSession = async () => {
     try {
-      const sessionData = await apiService.getCurrentSession(user.user_id);
-      setCurrentSession(sessionData.active_session ? sessionData.session : null);
+      const sessionData = await apiService.getActiveSessions(user.user_id);
+      setCurrentSession(sessionData.active_sessions && sessionData.active_sessions.length > 0 ? {
+        active_sessions: sessionData.active_sessions,
+        count: sessionData.count
+      } : null);
     } catch (error) {
       console.error('Error loading current session:', error);
     }
