@@ -129,44 +129,18 @@ except ImportError:
                 "confidence": self.current_entry.confidence.value
             }
         
-        def get_daily_summary(self, date: Optional[datetime] = None) -> Dict:
-            if date is None:
-                date = datetime.now().date()
-            
-            day_entries = [
-                entry for entry in self.entries
-                if entry.start_time.date() == date and entry.is_complete()
-            ]
-            
-            if not day_entries:
-                return {
-                    "date": date.isoformat(),
-                    "total_minutes": 0,
-                    "entries_count": 0,
-                    "categories": {},
-                    "confidence": "no_data",
-                    "limitations": "No time tracking data available for this date"
-                }
-            
-            total_minutes = sum(entry.duration_minutes() or 0 for entry in day_entries)
-            categories = {}
-            
-            for entry in day_entries:
-                if entry.category not in categories:
-                    categories[entry.category] = 0
-                categories[entry.category] += entry.duration_minutes() or 0
-            
-            return {
-                "date": date.isoformat(),
-                "total_minutes": total_minutes,
-                "entries_count": len(day_entries),
-                "categories": categories,
-                "confidence": ConfidenceLevel.MODERATE.value,
-                "limitations": "Data based on user input and may include estimation errors",
-                "average_energy": sum(e.energy_level for e in day_entries) / len(day_entries) if day_entries else 0,
-                "average_focus": sum(e.focus_quality for e in day_entries) / len(day_entries) if day_entries else 0,
-                "total_interruptions": sum(e.interruptions for e in day_entries)
-            }
+        def add_manual_entry(self, start_time: datetime, duration_minutes: int,
+                            task_description: str, category: str = "work",
+                            confidence: ConfidenceLevel = ConfidenceLevel.LOW) -> TimeEntry:
+            entry = TimeEntry(
+                start_time=start_time,
+                end_time=start_time + timedelta(minutes=duration_minutes),
+                task_description=task_description,
+                category=category,
+                confidence=confidence
+            )
+            self.entries.append(entry)
+            return entry
     
     class ProductivityEngine:
         def __init__(self, user_id: str = "default_user"):
