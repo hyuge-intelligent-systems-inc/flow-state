@@ -54,7 +54,6 @@ class ApiService {
   }
 
   // Session management
-  // Session management
   async startSession(userId, sessionData) {
     return this.client.post(`/api/users/${userId}/sessions/start`, sessionData);
   }
@@ -85,6 +84,19 @@ class ApiService {
 
   async cancelSession(userId, sessionId) {
     return this.client.delete(`/api/users/${userId}/sessions/${sessionId}`);
+  }
+
+  // Tag management
+  async getUserTags(userId) {
+    return this.client.get(`/api/users/${userId}/tags`);
+  }
+
+  async getTagAnalytics(userId, timeframeDays = 30) {
+    return this.client.get(`/api/users/${userId}/tags/analytics?timeframe_days=${timeframeDays}`);
+  }
+
+  async getEstimationAccuracy(userId) {
+    return this.client.get(`/api/users/${userId}/estimation-accuracy`);
   }
 
   // Analytics and insights
