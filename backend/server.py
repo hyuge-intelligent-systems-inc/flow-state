@@ -22,8 +22,208 @@ from datetime import datetime, timedelta
 import json
 import uuid
 
-# Import FlowState modules
+# Import enhanced FlowState modules
 try:
+    from enhanced_time_tracker import (
+        MultiSessionTimeTracker, SessionTag, TimeEntry, 
+        ConfidenceLevel, SessionStatus
+    )
+    
+    # Mock ProductivityEngine for the enhanced system
+    class ProductivityEngine:
+        def __init__(self, user_id: str = "default_user"):
+            self.user_id = user_id
+            self.time_tracker = MultiSessionTimeTracker(user_id)
+            
+        def start_productivity_session(self, main_tag: str, sub_tag: str = None, 
+                                     task_description: str = "", estimated_minutes: int = None, 
+                                     context: Dict[str, Any] = None) -> Dict[str, Any]:
+            entry = self.time_tracker.start_session(
+                main_tag=main_tag,
+                sub_tag=sub_tag,
+                task_description=task_description,
+                estimated_minutes=estimated_minutes
+            )
+            
+            return {
+                "session_started": True,
+                "session_id": entry.session_id,
+                "tag": str(entry.tag),
+                "guidance": {"suggestions": [], "insights": [], "warnings": [], "confidence_notes": []},
+                "ui_config": {},
+                "user_control": {
+                    "modify_estimate": "Available anytime during session",
+                    "change_tag": "Available anytime",
+                    "disable_guidance": "All suggestions can be ignored",
+                    "stop_early": "No minimum session length required"
+                },
+                "system_status": "optimal"
+            }
+        
+        def end_productivity_session(self, session_id: str, user_notes: str = "", 
+                                   energy_level: int = 3, focus_quality: int = 3, 
+                                   interruptions: int = 0, satisfaction: int = 3) -> Dict[str, Any]:
+            completed_entry = self.time_tracker.end_session(
+                session_id=session_id,
+                user_notes=user_notes,
+                energy_level=energy_level,
+                focus_quality=focus_quality,
+                interruptions=interruptions
+            )
+            
+            if not completed_entry:
+                return {"error": "Session not found or already completed"}
+            
+            return {
+                "session_summary": {
+                    "session_id": completed_entry.session_id,
+                    "tag": str(completed_entry.tag),
+                    "main_tag": completed_entry.tag.main_tag,
+                    "sub_tag": completed_entry.tag.sub_tag,
+                    "task": completed_entry.task_description,
+                    "duration_minutes": completed_entry.duration_minutes(),
+                    "focus_quality": completed_entry.focus_quality,
+                    "energy_level": completed_entry.energy_level,
+                    "interruptions": completed_entry.interruptions,
+                    "satisfaction": satisfaction,
+                    "confidence": completed_entry.confidence.value
+                },
+                "insights": [],
+                "areas_for_reflection": [
+                    f"How did the #{completed_entry.tag.main_tag} session align with your goals?",
+                    "What would you change about this work session?"
+                ],
+                "positive_observations": [
+                    f"Completed {completed_entry.duration_minutes()} minutes of focused work",
+                    f"Self-assessed focus quality: {completed_entry.focus_quality}/5"
+                ]
+            }
+        
+        def get_active_sessions(self) -> Dict[str, Any]:
+            return {
+                "active_sessions": self.time_tracker.get_active_sessions(),
+                "count": len(self.time_tracker.active_sessions)
+            }
+        
+        def get_daily_productivity_summary(self, date: Optional[datetime] = None) -> Dict[str, Any]:
+            return self.time_tracker.get_daily_summary(date)
+        
+        def get_comprehensive_insights(self, timeframe_days: int = 30) -> Dict[str, Any]:
+            tag_analytics = self.time_tracker.get_tag_analytics(timeframe_days)
+            estimation_accuracy = self.time_tracker.get_estimation_accuracy()
+            
+            return {
+                "summary": {
+                    "timeframe_days": timeframe_days, 
+                    "data_sources": ["multi_session_tracking"], 
+                    "confidence_levels": {},
+                    "user_interpretation_guidance": "Your tags and patterns reflect your unique work style"
+                },
+                "time_tracking_insights": {
+                    "active_days": timeframe_days,
+                    "total_tracked_time": tag_analytics.get("total_time_minutes", 0),
+                    "average_daily_time": tag_analytics.get("total_time_minutes", 0) / max(timeframe_days, 1),
+                    "total_sessions": tag_analytics.get("total_entries", 0)
+                },
+                "tag_insights": tag_analytics,
+                "estimation_accuracy": estimation_accuracy,
+                "ai_insights": [
+                    {
+                        "description": insight,
+                        "confidence": "moderate",
+                        "limitations": "Based on your self-reported data and tagging patterns"
+                    } for insight in tag_analytics.get("insights", [])
+                ],
+                "integration_insights": [
+                    {
+                        "type": "user_agency",
+                        "description": f"You're using {len(tag_analytics.get('user_tags', []))} different tags to categorize your work",
+                        "guidance": "This tagging system reflects your understanding of your work patterns"
+                    }
+                ],
+                "next_steps": [
+                    {
+                        "title": "Refine Your Tags",
+                        "description": "Consider if your current tags accurately reflect your work categories",
+                        "rationale": "User-defined categories are more meaningful than preset ones",
+                        "action": "Review and adjust tags that don't feel right to you"
+                    }
+                ],
+                "limitations": [
+                    "Analysis is based entirely on your self-reported data",
+                    "Tag effectiveness depends on consistent usage",
+                    "Individual context and external factors are not captured"
+                ]
+            }
+        
+        def get_patterns(self) -> Dict[str, Any]:
+            """Get pattern analysis with honest limitations"""
+            tag_analytics = self.time_tracker.get_tag_analytics()
+            
+            if tag_analytics.get("total_entries", 0) < 5:
+                return {
+                    "message": "Not enough data for pattern analysis",
+                    "required_sessions": 5,
+                    "current_sessions": tag_analytics.get("total_entries", 0),
+                    "user_guidance": "Patterns will become visible as you track more sessions"
+                }
+            
+            patterns = {}
+            main_tag_analysis = tag_analytics.get("main_tag_analysis", {})
+            
+            for main_tag, data in main_tag_analysis.items():
+                if data["session_count"] >= 3:  # Minimum for pattern recognition
+                    patterns[f"{main_tag}_productivity"] = {
+                        "description": f"During #{main_tag} activities, you average {data['avg_focus']:.1f}/5 focus and {data['avg_energy']:.1f}/5 energy",
+                        "confidence": "moderate",
+                        "sample_size": data["session_count"],
+                        "limitations": "Pattern based on self-reported metrics during tagged sessions",
+                        "user_interpretation_needed": True,
+                        "supporting_data": {
+                            "total_minutes": data["total_minutes"],
+                            "avg_duration": data.get("avg_duration", 0),
+                            "sub_tags_used": list(data.get("sub_tags", {}).keys())
+                        }
+                    }
+            
+            return {"patterns": patterns}
+        
+        def export_complete_user_data(self) -> Dict[str, Any]:
+            return self.time_tracker.export_data()
+    
+    # Mock UserProfile for compatibility
+    class UserProfile:
+        def __init__(self, user_id: Optional[str] = None):
+            self.user_id = user_id or str(uuid.uuid4())
+            self.created_at = datetime.now()
+            self.days_active = 0
+            self.total_sessions = 0
+            self.ui_complexity_level = 1
+            self.current_productivity_mode = "maintenance"
+        
+        def track_usage(self, session_type: str = "general"):
+            self.total_sessions += 1
+        
+        def update_accessibility_preferences(self, **kwargs):
+            pass
+        
+        def update_productivity_preferences(self, **kwargs):
+            pass
+        
+        def update_privacy_settings(self, **kwargs):
+            pass
+        
+        def export_all_data(self) -> Dict[str, Any]:
+            return {
+                "user_profile": {
+                    "user_id": self.user_id,
+                    "created_at": self.created_at.isoformat(),
+                    "days_active": self.days_active,
+                    "total_sessions": self.total_sessions
+                }
+            }
+
+except ImportError:
     from core.productivity_engine import ProductivityEngine, ProductivityMode
     from core.time_tracker import TimeTracker, ConfidenceLevel, TaskComplexity
     from core.user_profile import UserProfile, ProductivityMode as ProfileMode, PrivacyLevel
