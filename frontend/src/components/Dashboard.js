@@ -108,26 +108,49 @@ const Dashboard = ({ user }) => {
         </Link>
       </div>
 
-      {/* Current Session */}
+      {/* Active Sessions */}
       {currentSession && (
         <div className="flow-card bg-gradient-to-r from-flow-blue to-flow-purple text-white">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="text-lg font-semibold mb-1">Active Session</h3>
-              <p className="text-blue-100 mb-2">{currentSession.task || 'Working...'}</p>
-              <div className="text-sm text-blue-100">
-                Started at {formatTime(currentSession.start_time)} • 
-                Category: {currentSession.category}
-              </div>
+              <h3 className="text-lg font-semibold">Active Sessions ({currentSession.count})</h3>
+              <p className="text-blue-100">Multiple activities running simultaneously</p>
             </div>
-            <div className="text-right">
-              <div className="text-3xl font-bold session-timer session-active">
-                {formatDuration(currentSession.duration_minutes)}
+            <Link 
+              to="/track" 
+              className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+            >
+              Manage Sessions
+            </Link>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {currentSession.active_sessions.slice(0, 4).map((session) => (
+              <div key={session.session_id} className="bg-white bg-opacity-10 backdrop-blur-sm rounded-lg p-4">
+                <div className="flex justify-between items-start mb-2">
+                  <div className="text-sm font-medium">{session.tag}</div>
+                  <div className="text-xs text-blue-200">
+                    {formatDuration(session.duration_minutes)}
+                  </div>
+                </div>
+                <div className="text-xs text-blue-100 mb-2">
+                  {session.task || 'Working...'}
+                </div>
+                <div className="flex justify-between text-xs text-blue-200">
+                  <span>Started: {formatTime(session.start_time)}</span>
+                  <span>Energy: {session.energy_level}/5</span>
+                </div>
               </div>
-              <div className="text-sm text-blue-100">
-                {currentSession.confidence} confidence
+            ))}
+            
+            {currentSession.count > 4 && (
+              <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-lg p-4 flex items-center justify-center">
+                <div className="text-center text-blue-100">
+                  <div className="text-lg font-semibold">+{currentSession.count - 4}</div>
+                  <div className="text-xs">more sessions</div>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       )}
