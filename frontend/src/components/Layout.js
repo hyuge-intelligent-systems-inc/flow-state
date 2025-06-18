@@ -102,7 +102,6 @@ const Layout = ({ children, user, onLogout }) => {
                       : 'text-flow-gray hover:text-flow-dark hover:bg-gray-50'
                   }`}
                 >
-                  <span className="mr-2">{item.icon}</span>
                   {item.name}
                 </Link>
               ))}
