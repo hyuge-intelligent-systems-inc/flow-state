@@ -1113,21 +1113,20 @@ async def update_user_preferences(user_id: str, request: UpdatePreferencesReques
 # Session Management
 @app.post("/api/users/{user_id}/sessions/start")
 async def start_session(user_id: str, request: StartSessionRequest):
-    """Start a productivity session"""
+    """Start a productivity session with user-defined tags"""
     if user_id not in users_db:
         raise HTTPException(status_code=404, detail="User not found")
     
     engine = get_or_create_user_engine(user_id)
     profile = get_or_create_user_profile(user_id)
     
-    # Start session with context
-    context = {"energy_level": request.energy_level}
-    
+    # Start session with enhanced tagging system
     session_result = engine.start_productivity_session(
+        main_tag=request.main_tag,
+        sub_tag=request.sub_tag,
         task_description=request.task_description,
-        category=request.category,
         estimated_minutes=request.estimated_minutes,
-        context=context
+        context={"energy_level": request.energy_level}
     )
     
     # Track usage
@@ -1137,13 +1136,14 @@ async def start_session(user_id: str, request: StartSessionRequest):
 
 @app.post("/api/users/{user_id}/sessions/end")
 async def end_session(user_id: str, request: EndSessionRequest):
-    """End current productivity session"""
+    """End a specific productivity session"""
     if user_id not in users_db:
         raise HTTPException(status_code=404, detail="User not found")
     
     engine = get_or_create_user_engine(user_id)
     
     session_result = engine.end_productivity_session(
+        session_id=request.session_id,
         user_notes=request.user_notes,
         energy_level=request.energy_level,
         focus_quality=request.focus_quality,
@@ -1151,24 +1151,95 @@ async def end_session(user_id: str, request: EndSessionRequest):
         satisfaction=request.satisfaction
     )
     
+    if "error" in session_result:
+        raise HTTPException(status_code=404, detail=session_result["error"])
+    
     return session_result
 
-@app.get("/api/users/{user_id}/sessions/current")
-async def get_current_session(user_id: str):
-    """Get current active session"""
+@app.get("/api/users/{user_id}/sessions/active")
+async def get_active_sessions(user_id: str):
+    """Get all currently active sessions"""
     if user_id not in users_db:
         raise HTTPException(status_code=404, detail="User not found")
     
     engine = get_or_create_user_engine(user_id)
-    current_session = engine.time_tracker.get_current_session()
+    return engine.get_active_sessions()
+
+@app.get("/api/users/{user_id}/sessions/current")
+async def get_current_session(user_id: str):
+    """Get current active sessions (legacy compatibility)"""
+    if user_id not in users_db:
+        raise HTTPException(status_code=404, detail="User not found")
     
-    if not current_session:
-        return {"active_session": False}
+    engine = get_or_create_user_engine(user_id)
+    active_sessions = engine.get_active_sessions()
     
-    return {
-        "active_session": True,
-        "session": current_session
-    }
+    # For backward compatibility, return the first active session
+    if active_sessions["active_sessions"]:
+        return {
+            "active_session": True,
+            "session": active_sessions["active_sessions"][0],
+            "total_active": active_sessions["count"],
+            "all_sessions": active_sessions["active_sessions"]
+        }
+    else:
+        return {"active_session": False, "total_active": 0}
+
+@app.get("/api/users/{user_id}/sessions/{session_id}")
+async def get_session(user_id: str, session_id: str):
+    """Get specific session details"""
+    if user_id not in users_db:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    engine = get_or_create_user_engine(user_id)
+    session = engine.time_tracker.get_session(session_id)
+    
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    return session
+
+@app.post("/api/users/{user_id}/sessions/{session_id}/pause")
+async def pause_session(user_id: str, session_id: str):
+    """Pause a session (future enhancement)"""
+    if user_id not in users_db:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    engine = get_or_create_user_engine(user_id)
+    result = engine.time_tracker.pause_session(session_id)
+    
+    if not result:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    return {"message": "Session paused", "session_id": session_id}
+
+@app.post("/api/users/{user_id}/sessions/{session_id}/resume")
+async def resume_session(user_id: str, session_id: str):
+    """Resume a paused session (future enhancement)"""
+    if user_id not in users_db:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    engine = get_or_create_user_engine(user_id)
+    result = engine.time_tracker.resume_session(session_id)
+    
+    if not result:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    return {"message": "Session resumed", "session_id": session_id}
+
+@app.delete("/api/users/{user_id}/sessions/{session_id}")
+async def cancel_session(user_id: str, session_id: str):
+    """Cancel a session without recording completion"""
+    if user_id not in users_db:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    engine = get_or_create_user_engine(user_id)
+    result = engine.time_tracker.cancel_session(session_id)
+    
+    if not result:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    return {"message": "Session cancelled", "session_id": session_id}
 
 # Analytics and Insights
 @app.get("/api/users/{user_id}/summary/daily")
