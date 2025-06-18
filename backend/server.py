@@ -1390,7 +1390,7 @@ async def delete_user(user_id: str, confirmation: str):
 # Demo Helper Endpoints
 @app.get("/api/demo/sample-user")
 async def create_sample_user():
-    """Create a sample user with demo data"""
+    """Create a sample user with demo data using the new tagging system"""
     user_id = str(uuid.uuid4())
     username = f"demo_user_{user_id[:8]}"
     
@@ -1398,26 +1398,38 @@ async def create_sample_user():
     profile = UserProfile(user_id)
     engine = ProductivityEngine(user_id)
     
-    # Add some sample data
+    # Add sample sessions with diverse tagging
     sample_sessions = [
-        {"task": "Morning planning", "category": "planning", "duration": 15},
-        {"task": "Deep work session", "category": "work", "duration": 90},
-        {"task": "Email review", "category": "admin", "duration": 30},
-        {"task": "Team meeting", "category": "meeting", "duration": 60},
-        {"task": "Learning session", "category": "learning", "duration": 45}
+        {"task": "Client project planning", "main_tag": "work", "sub_tag": "client-meeting", "duration": 45, "energy": 4, "focus": 4},
+        {"task": "React tutorial", "main_tag": "learning", "sub_tag": "react", "duration": 60, "energy": 3, "focus": 5},
+        {"task": "Email management", "main_tag": "admin", "sub_tag": "email", "duration": 25, "energy": 2, "focus": 3},
+        {"task": "Morning workout", "main_tag": "exercise", "sub_tag": "cardio", "duration": 30, "energy": 5, "focus": 4},
+        {"task": "Team standup", "main_tag": "work", "sub_tag": "meeting", "duration": 15, "energy": 3, "focus": 3},
+        {"task": "Writing blog post", "main_tag": "creative", "sub_tag": "writing", "duration": 90, "energy": 4, "focus": 5},
+        {"task": "Meditation", "main_tag": "wellness", "sub_tag": "mindfulness", "duration": 20, "energy": 4, "focus": 4}
     ]
     
+    # Create sessions with realistic time spread
     for i, session in enumerate(sample_sessions):
-        start_time = datetime.now() - timedelta(hours=len(sample_sessions)-i)
+        # Create time entry manually for demo
+        start_time = datetime.now() - timedelta(hours=len(sample_sessions)-i, minutes=15)
         end_time = start_time + timedelta(minutes=session["duration"])
         
-        entry = engine.time_tracker.add_manual_entry(
+        session_entry = TimeEntry(
+            session_id=str(uuid.uuid4()),
             start_time=start_time,
-            duration_minutes=session["duration"],
+            tag=SessionTag(main_tag=session["main_tag"], sub_tag=session["sub_tag"]),
             task_description=session["task"],
-            category=session["category"],
-            confidence=ConfidenceLevel.HIGH
+            end_time=end_time,
+            status=SessionStatus.COMPLETED,
+            confidence=ConfidenceLevel.MODERATE,
+            energy_level=session["energy"],
+            focus_quality=session["focus"],
+            interruptions=0 if session["focus"] >= 4 else 1
         )
+        
+        engine.time_tracker.entries.append(session_entry)
+        engine.time_tracker.user_tags.add(session["main_tag"])
     
     # Store user
     users_db[user_id] = {
@@ -1433,8 +1445,10 @@ async def create_sample_user():
     return {
         "user_id": user_id,
         "username": username,
-        "message": "Sample user created with demo data",
-        "sample_sessions": len(sample_sessions)
+        "message": "Sample user created with enhanced tagging demo data",
+        "sample_sessions": len(sample_sessions),
+        "unique_main_tags": len(engine.time_tracker.user_tags),
+        "sample_tags": list(engine.time_tracker.user_tags)
     }
 
 @app.get("/api/demo/reset/{user_id}")
