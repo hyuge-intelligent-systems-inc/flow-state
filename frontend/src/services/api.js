@@ -54,6 +54,7 @@ class ApiService {
   }
 
   // Session management
+  // Session management
   async startSession(userId, sessionData) {
     return this.client.post(`/api/users/${userId}/sessions/start`, sessionData);
   }
