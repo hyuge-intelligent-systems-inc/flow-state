@@ -323,10 +323,17 @@ const TimeTracker = ({ user }) => {
           <div>
             <h3 className="text-lg font-semibold text-purple-900">Voice Control</h3>
             <p className="text-sm text-purple-700 mt-1">
-              Say your tag and sub-tag, then say "start" to begin tracking
+              Step 1: Say your tag and sub-tag (e.g., "work client project")
+            </p>
+            <p className="text-sm text-purple-700">
+              Step 2: Say "start" to begin tracking
             </p>
             <p className="text-xs text-purple-600 mt-1">
-              Example: "work client project" then "start"
+              Current tags: {sessionForm.main_tag && (
+                <span className="font-semibold">
+                  #{sessionForm.main_tag}{sessionForm.sub_tag && `/${sessionForm.sub_tag}`}
+                </span>
+              )}
             </p>
           </div>
           <button
@@ -344,7 +351,9 @@ const TimeTracker = ({ user }) => {
           <div className="mt-3 p-3 bg-purple-100 rounded-lg">
             <div className="flex items-center space-x-2">
               <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-              <span className="text-sm text-purple-800">Listening for voice commands...</span>
+              <span className="text-sm text-purple-800">
+                Listening... Say your tags (e.g., "work client project") or "start" to begin
+              </span>
             </div>
           </div>
         )}
