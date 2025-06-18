@@ -1651,8 +1651,16 @@ async def serve_react_app(full_path: str):
         with open("/app/frontend/build/index.html", "r") as f:
             return HTMLResponse(content=f.read())
     except FileNotFoundError:
-        # If React build doesn't exist, serve our demo page as fallback
-        return demo_page()
+        # If React build doesn't exist, show error message instead of demo page
+        return HTMLResponse(content="""
+        <html>
+        <head><title>FlowState - Error</title></head>
+        <body>
+        <h1>React Build Not Found</h1>
+        <p>The React application build is missing. Try the <a href="/demo">demo page</a> instead.</p>
+        </body>
+        </html>
+        """, status_code=500)
 
 if __name__ == "__main__":
     import uvicorn
