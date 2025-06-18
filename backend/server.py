@@ -292,6 +292,29 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Mount static files for frontend
+app.mount("/static", StaticFiles(directory="/app/frontend/build/static"), name="static")
+
+# Serve the React app for any unmatched routes
+@app.get("/{full_path:path}")
+async def serve_react_app(full_path: str):
+    """Serve React app for frontend routes"""
+    # If it's an API route, let it pass through
+    if full_path.startswith("api/") or full_path == "docs" or full_path == "openapi.json":
+        raise HTTPException(status_code=404, detail="Not found")
+    
+    # For demo route, serve the demo page
+    if full_path == "demo" or full_path == "demo/":
+        return demo_page()
+    
+    # Try to serve React build files
+    try:
+        with open("/app/frontend/build/index.html", "r") as f:
+            return HTMLResponse(content=f.read())
+    except FileNotFoundError:
+        # If React build doesn't exist, serve our demo page
+        return demo_page()
+
 # In-memory storage for demo (in production, use proper database)
 users_db: Dict[str, Dict] = {}
 engines_db: Dict[str, ProductivityEngine] = {}
