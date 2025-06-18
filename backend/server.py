@@ -503,11 +503,13 @@ profiles_db: Dict[str, UserProfile] = {}
 # Pydantic models for API requests/responses
 class StartSessionRequest(BaseModel):
     task_description: str = ""
-    category: str = "work"
+    main_tag: str  # Required: Primary hashtag-like identifier
+    sub_tag: Optional[str] = None  # Optional: Additional description
     estimated_minutes: Optional[int] = None
     energy_level: int = 3
     
 class EndSessionRequest(BaseModel):
+    session_id: str  # Required: Which session to end
     user_notes: str = ""
     energy_level: int = 3
     focus_quality: int = 3
