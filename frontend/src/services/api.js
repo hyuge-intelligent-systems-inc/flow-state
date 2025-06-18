@@ -62,8 +62,28 @@ class ApiService {
     return this.client.post(`/api/users/${userId}/sessions/end`, sessionData);
   }
 
+  async getActiveSessions(userId) {
+    return this.client.get(`/api/users/${userId}/sessions/active`);
+  }
+
   async getCurrentSession(userId) {
     return this.client.get(`/api/users/${userId}/sessions/current`);
+  }
+
+  async getSession(userId, sessionId) {
+    return this.client.get(`/api/users/${userId}/sessions/${sessionId}`);
+  }
+
+  async pauseSession(userId, sessionId) {
+    return this.client.post(`/api/users/${userId}/sessions/${sessionId}/pause`);
+  }
+
+  async resumeSession(userId, sessionId) {
+    return this.client.post(`/api/users/${userId}/sessions/${sessionId}/resume`);
+  }
+
+  async cancelSession(userId, sessionId) {
+    return this.client.delete(`/api/users/${userId}/sessions/${sessionId}`);
   }
 
   // Analytics and insights
