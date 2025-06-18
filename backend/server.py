@@ -1,0 +1,429 @@
+"""
+FlowState FastAPI Backend Server
+Exposes the FlowState productivity system through REST API
+"""
+
+import sys
+import os
+from pathlib import Path
+
+# Add the src directory to Python path for imports
+src_path = Path(__file__).parent.parent / "src"
+sys.path.insert(0, str(src_path))
+
+from fastapi import FastAPI, HTTPException, Depends
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel
+from typing import Dict, List, Optional, Any
+from datetime import datetime, timedelta
+import json
+import uuid
+
+# Import FlowState modules
+from core.productivity_engine import ProductivityEngine, ProductivityMode
+from core.time_tracker import TimeTracker, ConfidenceLevel, TaskComplexity
+from core.user_profile import UserProfile, ProductivityMode as ProfileMode, PrivacyLevel
+from psychology.self_discovery import SelfDiscoveryGuide, ReflectionCategory, SupportLevel
+
+app = FastAPI(
+    title="FlowState API",
+    description="Human-Centered Productivity Intelligence API",
+    version="1.0.0"
+)
+
+# Configure CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, specify exact origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# In-memory storage for demo (in production, use proper database)
+users_db: Dict[str, Dict] = {}
+engines_db: Dict[str, ProductivityEngine] = {}
+profiles_db: Dict[str, UserProfile] = {}
+
+# Pydantic models for API requests/responses
+class StartSessionRequest(BaseModel):
+    task_description: str = ""
+    category: str = "work"
+    estimated_minutes: Optional[int] = None
+    energy_level: int = 3
+    
+class EndSessionRequest(BaseModel):
+    user_notes: str = ""
+    energy_level: int = 3
+    focus_quality: int = 3
+    interruptions: int = 0
+    satisfaction: int = 3
+
+class UserCreateRequest(BaseModel):
+    username: str
+    preferences: Optional[Dict[str, Any]] = None
+
+class UpdatePreferencesRequest(BaseModel):
+    accessibility_prefs: Optional[Dict[str, Any]] = None
+    productivity_prefs: Optional[Dict[str, Any]] = None
+    privacy_settings: Optional[Dict[str, Any]] = None
+
+# Helper functions
+def get_or_create_user_engine(user_id: str) -> ProductivityEngine:
+    """Get or create productivity engine for user"""
+    if user_id not in engines_db:
+        engines_db[user_id] = ProductivityEngine(user_id)
+    return engines_db[user_id]
+
+def get_or_create_user_profile(user_id: str) -> UserProfile:
+    """Get or create user profile"""
+    if user_id not in profiles_db:
+        profiles_db[user_id] = UserProfile(user_id)
+    return profiles_db[user_id]
+
+# API Routes
+
+@app.get("/")
+async def root():
+    """API status endpoint"""
+    return {
+        "message": "FlowState API is running",
+        "version": "1.0.0",
+        "philosophy": "The first productivity app that works with your psychology, not against it"
+    }
+
+@app.get("/api/health")
+async def health_check():
+    """Health check endpoint"""
+    return {
+        "status": "healthy",
+        "timestamp": datetime.now().isoformat(),
+        "active_users": len(engines_db)
+    }
+
+# User Management
+@app.post("/api/users")
+async def create_user(request: UserCreateRequest):
+    """Create a new user"""
+    user_id = str(uuid.uuid4())
+    
+    # Create user profile
+    profile = UserProfile(user_id)
+    profile.created_at = datetime.now()
+    profiles_db[user_id] = profile
+    
+    # Create productivity engine
+    engine = ProductivityEngine(user_id)
+    engines_db[user_id] = engine
+    
+    # Store user info
+    users_db[user_id] = {
+        "user_id": user_id,
+        "username": request.username,
+        "created_at": datetime.now().isoformat(),
+        "preferences": request.preferences or {}
+    }
+    
+    return {
+        "user_id": user_id,
+        "username": request.username,
+        "message": "User created successfully"
+    }
+
+@app.get("/api/users/{user_id}")
+async def get_user(user_id: str):
+    """Get user information"""
+    if user_id not in users_db:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    profile = get_or_create_user_profile(user_id)
+    user_info = users_db[user_id]
+    
+    return {
+        "user_id": user_id,
+        "username": user_info["username"],
+        "created_at": user_info["created_at"],
+        "profile": {
+            "productivity_mode": profile.current_productivity_mode.value,
+            "days_active": profile.days_active,
+            "total_sessions": profile.total_sessions,
+            "ui_complexity_level": profile.ui_complexity_level
+        }
+    }
+
+@app.put("/api/users/{user_id}/preferences")
+async def update_user_preferences(user_id: str, request: UpdatePreferencesRequest):
+    """Update user preferences"""
+    if user_id not in users_db:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    profile = get_or_create_user_profile(user_id)
+    
+    if request.accessibility_prefs:
+        profile.update_accessibility_preferences(**request.accessibility_prefs)
+    
+    if request.productivity_prefs:
+        profile.update_productivity_preferences(**request.productivity_prefs)
+    
+    if request.privacy_settings:
+        profile.update_privacy_settings(**request.privacy_settings)
+    
+    return {"message": "Preferences updated successfully"}
+
+# Session Management
+@app.post("/api/users/{user_id}/sessions/start")
+async def start_session(user_id: str, request: StartSessionRequest):
+    """Start a productivity session"""
+    if user_id not in users_db:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    engine = get_or_create_user_engine(user_id)
+    profile = get_or_create_user_profile(user_id)
+    
+    # Start session with context
+    context = {"energy_level": request.energy_level}
+    
+    session_result = engine.start_productivity_session(
+        task_description=request.task_description,
+        category=request.category,
+        estimated_minutes=request.estimated_minutes,
+        context=context
+    )
+    
+    # Track usage
+    profile.track_usage("productivity_session")
+    
+    return session_result
+
+@app.post("/api/users/{user_id}/sessions/end")
+async def end_session(user_id: str, request: EndSessionRequest):
+    """End current productivity session"""
+    if user_id not in users_db:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    engine = get_or_create_user_engine(user_id)
+    
+    session_result = engine.end_productivity_session(
+        user_notes=request.user_notes,
+        energy_level=request.energy_level,
+        focus_quality=request.focus_quality,
+        interruptions=request.interruptions,
+        satisfaction=request.satisfaction
+    )
+    
+    return session_result
+
+@app.get("/api/users/{user_id}/sessions/current")
+async def get_current_session(user_id: str):
+    """Get current active session"""
+    if user_id not in users_db:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    engine = get_or_create_user_engine(user_id)
+    current_session = engine.time_tracker.get_current_session()
+    
+    if not current_session:
+        return {"active_session": False}
+    
+    return {
+        "active_session": True,
+        "session": current_session
+    }
+
+# Analytics and Insights
+@app.get("/api/users/{user_id}/summary/daily")
+async def get_daily_summary(user_id: str, date: Optional[str] = None):
+    """Get daily productivity summary"""
+    if user_id not in users_db:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    engine = get_or_create_user_engine(user_id)
+    
+    if date:
+        try:
+            target_date = datetime.fromisoformat(date)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid date format")
+    else:
+        target_date = None
+    
+    summary = engine.get_daily_productivity_summary(target_date)
+    return summary
+
+@app.get("/api/users/{user_id}/insights")
+async def get_insights(user_id: str, timeframe_days: int = 30):
+    """Get comprehensive productivity insights"""
+    if user_id not in users_db:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    engine = get_or_create_user_engine(user_id)
+    insights = engine.get_comprehensive_insights(timeframe_days)
+    
+    return insights
+
+@app.get("/api/users/{user_id}/patterns")
+async def get_patterns(user_id: str):
+    """Get pattern analysis"""
+    if user_id not in users_db:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    engine = get_or_create_user_engine(user_id)
+    
+    if len(engine.time_tracker.entries) < 5:
+        return {
+            "message": "Not enough data for pattern analysis",
+            "required_sessions": 5,
+            "current_sessions": len(engine.time_tracker.entries)
+        }
+    
+    patterns = engine.pattern_analyzer.analyze_time_patterns(
+        engine.time_tracker.entries,
+        timeframe_days=30
+    )
+    
+    # Convert patterns to serializable format
+    patterns_dict = {}
+    for name, pattern in patterns.items():
+        patterns_dict[name] = {
+            "description": pattern.description,
+            "confidence": pattern.confidence.value,
+            "sample_size": pattern.sample_size,
+            "limitations": pattern.limitations,
+            "user_interpretation_needed": pattern.user_interpretation_needed,
+            "supporting_data": pattern.supporting_data
+        }
+    
+    return {"patterns": patterns_dict}
+
+# Self-Discovery Features
+@app.post("/api/users/{user_id}/self-discovery/start")
+async def start_self_discovery(user_id: str, category: str, support_level: str = "guided"):
+    """Start a self-discovery session"""
+    if user_id not in users_db:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    engine = get_or_create_user_engine(user_id)
+    
+    try:
+        reflection_category = ReflectionCategory(category)
+        support_level_enum = SupportLevel(support_level)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid category or support level")
+    
+    discovery_session = engine.start_self_discovery_session(
+        reflection_category, support_level_enum
+    )
+    
+    return discovery_session
+
+# Data Export and Privacy
+@app.get("/api/users/{user_id}/export")
+async def export_user_data(user_id: str):
+    """Export all user data"""
+    if user_id not in users_db:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    engine = get_or_create_user_engine(user_id)
+    profile = get_or_create_user_profile(user_id)
+    
+    # Export from all modules
+    engine_data = engine.export_complete_user_data()
+    profile_data = profile.export_all_data()
+    user_data = users_db[user_id]
+    
+    return {
+        "export_timestamp": datetime.now().isoformat(),
+        "user_info": user_data,
+        "productivity_engine": engine_data,
+        "user_profile": profile_data,
+        "data_ownership": "This data belongs entirely to the user"
+    }
+
+@app.delete("/api/users/{user_id}")
+async def delete_user(user_id: str, confirmation: str):
+    """Delete user and all data"""
+    if user_id not in users_db:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    expected_confirmation = f"DELETE-{user_id[:8]}"
+    if confirmation != expected_confirmation:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Invalid confirmation. Required: {expected_confirmation}"
+        )
+    
+    # Delete from all storage
+    del users_db[user_id]
+    if user_id in engines_db:
+        del engines_db[user_id]
+    if user_id in profiles_db:
+        del profiles_db[user_id]
+    
+    return {"message": "User and all data deleted successfully"}
+
+# Demo Helper Endpoints
+@app.get("/api/demo/sample-user")
+async def create_sample_user():
+    """Create a sample user with demo data"""
+    user_id = str(uuid.uuid4())
+    username = f"demo_user_{user_id[:8]}"
+    
+    # Create user
+    profile = UserProfile(user_id)
+    engine = ProductivityEngine(user_id)
+    
+    # Add some sample data
+    sample_sessions = [
+        {"task": "Morning planning", "category": "planning", "duration": 15},
+        {"task": "Deep work session", "category": "work", "duration": 90},
+        {"task": "Email review", "category": "admin", "duration": 30},
+        {"task": "Team meeting", "category": "meeting", "duration": 60},
+        {"task": "Learning session", "category": "learning", "duration": 45}
+    ]
+    
+    for i, session in enumerate(sample_sessions):
+        start_time = datetime.now() - timedelta(hours=len(sample_sessions)-i)
+        end_time = start_time + timedelta(minutes=session["duration"])
+        
+        entry = engine.time_tracker.add_manual_entry(
+            start_time=start_time,
+            duration_minutes=session["duration"],
+            task_description=session["task"],
+            category=session["category"],
+            confidence=ConfidenceLevel.HIGH
+        )
+    
+    # Store user
+    users_db[user_id] = {
+        "user_id": user_id,
+        "username": username,
+        "created_at": datetime.now().isoformat(),
+        "preferences": {},
+        "is_demo": True
+    }
+    engines_db[user_id] = engine
+    profiles_db[user_id] = profile
+    
+    return {
+        "user_id": user_id,
+        "username": username,
+        "message": "Sample user created with demo data",
+        "sample_sessions": len(sample_sessions)
+    }
+
+@app.get("/api/demo/reset/{user_id}")
+async def reset_demo_user(user_id: str):
+    """Reset demo user data"""
+    if user_id not in users_db or not users_db[user_id].get("is_demo"):
+        raise HTTPException(status_code=404, detail="Demo user not found")
+    
+    # Reset engine and profile
+    engines_db[user_id] = ProductivityEngine(user_id)
+    profiles_db[user_id] = UserProfile(user_id)
+    
+    return {"message": "Demo user data reset"}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8001)
