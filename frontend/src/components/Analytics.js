@@ -15,7 +15,7 @@ const Analytics = ({ user }) => {
   const loadAnalyticsData = async () => {
     setLoading(true);
     try {
-      const [insightsData, patternsData, tagAnalytics] = await Promise.all([
+      const [insightsData, patternsData, tagAnalyticsData] = await Promise.all([
         apiService.getInsights(user.user_id, timeframe),
         apiService.getPatterns(user.user_id),
         apiService.getTagAnalytics(user.user_id, timeframe)
@@ -23,7 +23,7 @@ const Analytics = ({ user }) => {
       
       setInsights(insightsData);
       setPatterns(patternsData);
-      setTagAnalytics(tagAnalytics);
+      setTagAnalytics(tagAnalyticsData);
     } catch (error) {
       console.error('Error loading analytics:', error);
     } finally {
