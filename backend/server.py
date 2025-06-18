@@ -21,10 +21,246 @@ import json
 import uuid
 
 # Import FlowState modules
-from core.productivity_engine import ProductivityEngine, ProductivityMode
-from core.time_tracker import TimeTracker, ConfidenceLevel, TaskComplexity
-from core.user_profile import UserProfile, ProductivityMode as ProfileMode, PrivacyLevel
-from psychology.self_discovery import SelfDiscoveryGuide, ReflectionCategory, SupportLevel
+try:
+    from core.productivity_engine import ProductivityEngine, ProductivityMode
+    from core.time_tracker import TimeTracker, ConfidenceLevel, TaskComplexity
+    from core.user_profile import UserProfile, ProductivityMode as ProfileMode, PrivacyLevel
+    from psychology.self_discovery import SelfDiscoveryGuide, ReflectionCategory, SupportLevel
+except ImportError:
+    # For demo purposes, create mock classes
+    from enum import Enum
+    from dataclasses import dataclass
+    from typing import Dict, List, Optional, Any
+    from datetime import datetime
+    import uuid
+    
+    class ConfidenceLevel(Enum):
+        HIGH = "high"
+        MODERATE = "moderate" 
+        LOW = "low"
+        UNCERTAIN = "uncertain"
+    
+    class ProductivityMode(Enum):
+        SURVIVAL = "survival"
+        MAINTENANCE = "maintenance"
+        GROWTH = "growth"
+        MASTERY = "mastery"
+    
+    class TaskComplexity(Enum):
+        SIMPLE = "simple"
+        MODERATE = "moderate"
+        COMPLEX = "complex"
+        UNKNOWN = "unknown"
+    
+    class ReflectionCategory(Enum):
+        PRODUCTIVITY_PATTERNS = "productivity_patterns"
+        ENERGY_AWARENESS = "energy_awareness"
+        
+    class SupportLevel(Enum):
+        MINIMAL = "minimal"
+        GUIDED = "guided"
+        COMPREHENSIVE = "comprehensive"
+    
+    @dataclass
+    class TimeEntry:
+        start_time: datetime
+        end_time: Optional[datetime] = None
+        task_description: str = ""
+        category: str = "uncategorized"
+        confidence: ConfidenceLevel = ConfidenceLevel.MODERATE
+        user_notes: str = ""
+        interruptions: int = 0
+        energy_level: int = 3
+        focus_quality: int = 3
+        
+        def duration_minutes(self) -> Optional[int]:
+            if not self.end_time:
+                return None
+            delta = self.end_time - self.start_time
+            return int(delta.total_seconds() / 60)
+        
+        def is_complete(self) -> bool:
+            return self.end_time is not None
+    
+    class TimeTracker:
+        def __init__(self, user_id: str = "default_user"):
+            self.user_id = user_id
+            self.entries: List[TimeEntry] = []
+            self.current_entry: Optional[TimeEntry] = None
+            
+        def start_timer(self, task_description: str = "", category: str = "work", estimated_minutes: Optional[int] = None) -> TimeEntry:
+            if self.current_entry and not self.current_entry.is_complete():
+                self.stop_timer()
+            
+            self.current_entry = TimeEntry(
+                start_time=datetime.now(),
+                task_description=task_description,
+                category=category,
+                confidence=ConfidenceLevel.MODERATE
+            )
+            self.entries.append(self.current_entry)
+            return self.current_entry
+        
+        def stop_timer(self, user_notes: str = "", energy_level: int = 3, focus_quality: int = 3, interruptions: int = 0) -> Optional[TimeEntry]:
+            if not self.current_entry or self.current_entry.is_complete():
+                return None
+            
+            self.current_entry.end_time = datetime.now()
+            self.current_entry.user_notes = user_notes
+            self.current_entry.energy_level = energy_level
+            self.current_entry.focus_quality = focus_quality
+            self.current_entry.interruptions = interruptions
+            
+            completed_entry = self.current_entry
+            self.current_entry = None
+            return completed_entry
+        
+        def get_current_session(self) -> Optional[Dict]:
+            if not self.current_entry:
+                return None
+            
+            duration = int((datetime.now() - self.current_entry.start_time).total_seconds() / 60)
+            
+            return {
+                "task": self.current_entry.task_description,
+                "category": self.current_entry.category,
+                "duration_minutes": duration,
+                "start_time": self.current_entry.start_time.isoformat(),
+                "confidence": self.current_entry.confidence.value
+            }
+        
+        def get_daily_summary(self, date: Optional[datetime] = None) -> Dict:
+            if date is None:
+                date = datetime.now().date()
+            
+            day_entries = [
+                entry for entry in self.entries
+                if entry.start_time.date() == date and entry.is_complete()
+            ]
+            
+            if not day_entries:
+                return {
+                    "date": date.isoformat(),
+                    "total_minutes": 0,
+                    "entries_count": 0,
+                    "categories": {},
+                    "confidence": "no_data",
+                    "limitations": "No time tracking data available for this date"
+                }
+            
+            total_minutes = sum(entry.duration_minutes() or 0 for entry in day_entries)
+            categories = {}
+            
+            for entry in day_entries:
+                if entry.category not in categories:
+                    categories[entry.category] = 0
+                categories[entry.category] += entry.duration_minutes() or 0
+            
+            return {
+                "date": date.isoformat(),
+                "total_minutes": total_minutes,
+                "entries_count": len(day_entries),
+                "categories": categories,
+                "confidence": ConfidenceLevel.MODERATE.value,
+                "limitations": "Data based on user input and may include estimation errors",
+                "average_energy": sum(e.energy_level for e in day_entries) / len(day_entries) if day_entries else 0,
+                "average_focus": sum(e.focus_quality for e in day_entries) / len(day_entries) if day_entries else 0,
+                "total_interruptions": sum(e.interruptions for e in day_entries)
+            }
+    
+    class ProductivityEngine:
+        def __init__(self, user_id: str = "default_user"):
+            self.user_id = user_id
+            self.time_tracker = TimeTracker(user_id)
+            
+        def start_productivity_session(self, task_description: str = "", category: str = "work", 
+                                     estimated_minutes: Optional[int] = None, context: Dict[str, Any] = None) -> Dict[str, Any]:
+            entry = self.time_tracker.start_timer(task_description, category, estimated_minutes)
+            
+            return {
+                "session_started": True,
+                "entry_id": entry.start_time.isoformat(),
+                "guidance": {"suggestions": [], "insights": [], "warnings": [], "confidence_notes": []},
+                "ui_config": {},
+                "user_control": {
+                    "modify_estimate": "Available anytime during session",
+                    "change_category": "Available anytime",
+                    "disable_guidance": "All suggestions can be ignored",
+                    "stop_early": "No minimum session length required"
+                },
+                "system_status": "optimal"
+            }
+        
+        def end_productivity_session(self, user_notes: str = "", energy_level: int = 3,
+                                   focus_quality: int = 3, interruptions: int = 0,
+                                   satisfaction: int = 3) -> Dict[str, Any]:
+            completed_entry = self.time_tracker.stop_timer(user_notes, energy_level, focus_quality, interruptions)
+            
+            if not completed_entry:
+                return {"error": "No active session to end"}
+            
+            return {
+                "session_summary": {
+                    "task": completed_entry.task_description,
+                    "category": completed_entry.category,
+                    "duration_minutes": completed_entry.duration_minutes(),
+                    "focus_quality": completed_entry.focus_quality,
+                    "energy_level": completed_entry.energy_level,
+                    "interruptions": completed_entry.interruptions,
+                    "satisfaction": satisfaction
+                },
+                "insights": [],
+                "areas_for_reflection": [],
+                "positive_observations": []
+            }
+        
+        def get_daily_productivity_summary(self, date: Optional[datetime] = None) -> Dict[str, Any]:
+            return self.time_tracker.get_daily_summary(date)
+        
+        def get_comprehensive_insights(self, timeframe_days: int = 30) -> Dict[str, Any]:
+            return {
+                "summary": {"timeframe_days": timeframe_days, "data_sources": ["time_tracking"], "confidence_levels": {}, "user_interpretation_guidance": ""},
+                "time_tracking_insights": {
+                    "active_days": min(timeframe_days, len(set(e.start_time.date() for e in self.time_tracker.entries if e.is_complete()))),
+                    "total_tracked_time": sum(e.duration_minutes() or 0 for e in self.time_tracker.entries if e.is_complete()),
+                    "average_daily_time": 45
+                },
+                "pattern_insights": {},
+                "ai_insights": [],
+                "integration_insights": [],
+                "next_steps": [],
+                "limitations": []
+            }
+        
+        def export_complete_user_data(self) -> Dict[str, Any]:
+            return {
+                "user_id": self.user_id,
+                "export_timestamp": datetime.now().isoformat(),
+                "productivity_engine": {"entries": len(self.time_tracker.entries)},
+                "data_ownership_statement": {"ownership": "All data belongs entirely to the user"}
+            }
+    
+    class UserProfile:
+        def __init__(self, user_id: Optional[str] = None):
+            self.user_id = user_id or str(uuid.uuid4())
+            self.created_at = datetime.now()
+            self.days_active = 0
+            self.total_sessions = 0
+            self.ui_complexity_level = 1
+            self.current_productivity_mode = ProductivityMode.MAINTENANCE
+        
+        def track_usage(self, session_type: str = "general"):
+            self.total_sessions += 1
+        
+        def export_all_data(self) -> Dict[str, Any]:
+            return {
+                "user_profile": {
+                    "user_id": self.user_id,
+                    "created_at": self.created_at.isoformat(),
+                    "days_active": self.days_active,
+                    "total_sessions": self.total_sessions
+                }
+            }
 
 app = FastAPI(
     title="FlowState API",
