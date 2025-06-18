@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlowState Demo Access</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+            max-width: 600px;
+            text-align: center;
+        }
+        .logo {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%);
+            border-radius: 15px;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+        }
+        h1 {
+            color: #1F2937;
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+        .subtitle {
+            color: #6B7280;
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+        }
+        .philosophy {
+            background: #F9FAFB;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #3B82F6;
+        }
+        .access-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin: 30px 0;
+        }
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%);
+            color: white;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+        }
+        .btn-secondary {
+            background: #F3F4F6;
+            color: #374151;
+            border: 2px solid #E5E7EB;
+        }
+        .btn-secondary:hover {
+            background: #E5E7EB;
+        }
+        .status {
+            background: #ECFDF5;
+            border: 1px solid #D1FAE5;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .api-demo {
+            background: #FEF3C7;
+            border: 1px solid #F59E0B;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .demo-result {
+            background: #F3F4F6;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+            text-align: left;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">⚡</div>
+        <h1>FlowState</h1>
+        <p class="subtitle">Human-Centered Productivity Intelligence</p>
+        
+        <div class="philosophy">
+            <h3>🧠 The Philosophy</h3>
+            <p>Most productivity apps assume you need to be optimized. FlowState assumes you need to be understood.</p>
+        </div>
+
+        <div class="status">
+            <h3>✅ System Status</h3>
+            <p>FlowState is running and fully functional!</p>
+            <div id="health-status">Checking system health...</div>
+        </div>
+
+        <div class="access-buttons">
+            <button class="btn btn-primary" onclick="openMainApp()">
+                🚀 Open FlowState App (Port 3000)
+            </button>
+            
+            <button class="btn btn-secondary" onclick="openAPI()">
+                📊 View API Documentation
+            </button>
+            
+            <button class="btn btn-secondary" onclick="testAPI()">
+                🧪 Test API Functions
+            </button>
+        </div>
+
+        <div class="api-demo">
+            <h3>📡 Live API Demo</h3>
+            <p>If the main app isn't accessible, you can test the core functionality here:</p>
+            
+            <button class="btn btn-secondary" onclick="createDemoUser()" style="margin: 10px;">
+                Create Demo User
+            </button>
+            
+            <button class="btn btn-secondary" onclick="startSession()" style="margin: 10px;">
+                Start Session
+            </button>
+            
+            <button class="btn btn-secondary" onclick="getDailySummary()" style="margin: 10px;">
+                Get Daily Summary
+            </button>
+            
+            <div id="demo-results"></div>
+        </div>
+
+        <div style="margin-top: 30px; font-size: 0.9rem; color: #6B7280;">
+            <p>✨ Privacy-first • 🔒 Your data, your control • 🚀 Progressive complexity</p>
+        </div>
+    </div>
+
+    <script>
+        let currentUserId = null;
+
+        // Check system health on load
+        window.onload = async function() {
+            try {
+                const response = await fetch('/api/health');
+                const data = await response.json();
+                document.getElementById('health-status').innerHTML = `
+                    Status: <strong>${data.status}</strong><br>
+                    Active Users: ${data.active_users}<br>
+                    Timestamp: ${new Date(data.timestamp).toLocaleString()}
+                `;
+            } catch (error) {
+                document.getElementById('health-status').innerHTML = '❌ Backend not responding';
+            }
+        };
+
+        function openMainApp() {
+            // Try different possible URLs for the main app
+            const urls = [
+                'http://localhost:3000',
+                '/3000/',
+                ':3000',
+                'https://demobackend.emergentagent.com:3000'
+            ];
+            
+            // Try opening the first URL
+            window.open(urls[0], '_blank');
+            
+            // Show alternative instructions
+            setTimeout(() => {
+                alert(`If the app doesn't open, try these URLs in a new tab:\n\n${urls.join('\n')}\n\nOr use the API demo below to test functionality.`);
+            }, 2000);
+        }
+
+        function openAPI() {
+            window.open('/docs', '_blank');
+        }
+
+        function testAPI() {
+            window.open('/api/health', '_blank');
+        }
+
+        async function createDemoUser() {
+            try {
+                const response = await fetch('/api/demo/sample-user');
+                const data = await response.json();
+                currentUserId = data.user_id;
+                
+                document.getElementById('demo-results').innerHTML = `
+                    <div class="demo-result">
+                        <strong>✅ Demo User Created!</strong><br>
+                        User ID: ${data.user_id}<br>
+                        Username: ${data.username}<br>
+                        Sample Sessions: ${data.sample_sessions}
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('demo-results').innerHTML = `
+                    <div class="demo-result">❌ Error: ${error.message}</div>
+                `;
+            }
+        }
+
+        async function startSession() {
+            if (!currentUserId) {
+                alert('Please create a demo user first!');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/users/${currentUserId}/sessions/start`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        task_description: 'Testing FlowState Demo',
+                        category: 'work',
+                        estimated_minutes: 30,
+                        energy_level: 4
+                    })
+                });
+                const data = await response.json();
+                
+                document.getElementById('demo-results').innerHTML = `
+                    <div class="demo-result">
+                        <strong>✅ Session Started!</strong><br>
+                        Entry ID: ${data.entry_id}<br>
+                        System Status: ${data.system_status}<br>
+                        <em>Session is now running...</em>
+                    </div>
+                `;
+
+                // Auto-end session after 5 seconds for demo
+                setTimeout(endSession, 5000);
+            } catch (error) {
+                document.getElementById('demo-results').innerHTML = `
+                    <div class="demo-result">❌ Error: ${error.message}</div>
+                `;
+            }
+        }
+
+        async function endSession() {
+            if (!currentUserId) return;
+
+            try {
+                const response = await fetch(`/api/users/${currentUserId}/sessions/end`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user_notes: 'Great demo session!',
+                        energy_level: 4,
+                        focus_quality: 5,
+                        interruptions: 0,
+                        satisfaction: 5
+                    })
+                });
+                const data = await response.json();
+                
+                document.getElementById('demo-results').innerHTML = `
+                    <div class="demo-result">
+                        <strong>✅ Session Ended!</strong><br>
+                        Task: ${data.session_summary.task}<br>
+                        Duration: ${data.session_summary.duration_minutes} minutes<br>
+                        Focus Quality: ${data.session_summary.focus_quality}/5<br>
+                        Satisfaction: ${data.session_summary.satisfaction}/5
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('demo-results').innerHTML = `
+                    <div class="demo-result">❌ Error: ${error.message}</div>
+                `;
+            }
+        }
+
+        async function getDailySummary() {
+            if (!currentUserId) {
+                alert('Please create a demo user first!');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/users/${currentUserId}/summary/daily`);
+                const data = await response.json();
+                
+                document.getElementById('demo-results').innerHTML = `
+                    <div class="demo-result">
+                        <strong>📊 Daily Summary</strong><br>
+                        Date: ${data.date}<br>
+                        Total Focus Time: ${data.total_minutes} minutes<br>
+                        Sessions: ${data.entries_count}<br>
+                        Average Energy: ${data.average_energy?.toFixed(1) || 'N/A'}/5<br>
+                        Average Focus: ${data.average_focus?.toFixed(1) || 'N/A'}/5<br>
+                        Categories: ${Object.keys(data.categories || {}).join(', ')}
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('demo-results').innerHTML = `
+                    <div class="demo-result">❌ Error: ${error.message}</div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
