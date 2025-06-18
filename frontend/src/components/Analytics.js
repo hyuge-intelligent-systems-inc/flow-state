@@ -4,6 +4,7 @@ import { apiService } from '../services/api';
 const Analytics = ({ user }) => {
   const [insights, setInsights] = useState(null);
   const [patterns, setPatterns] = useState(null);
+  const [tagAnalytics, setTagAnalytics] = useState(null);
   const [timeframe, setTimeframe] = useState(30);
   const [loading, setLoading] = useState(true);
 
