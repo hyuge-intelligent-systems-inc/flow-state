@@ -1638,6 +1638,22 @@ async def reset_demo_user(user_id: str):
     
     return {"message": "Demo user data reset"}
 
+# Serve the React app for any unmatched routes (MUST BE LAST!)
+@app.get("/{full_path:path}")
+async def serve_react_app(full_path: str):
+    """Serve React app for frontend routes"""
+    # For demo route, serve the demo page first
+    if full_path == "demo" or full_path == "demo/":
+        return demo_page()
+    
+    # Try to serve React build files for frontend routes
+    try:
+        with open("/app/frontend/build/index.html", "r") as f:
+            return HTMLResponse(content=f.read())
+    except FileNotFoundError:
+        # If React build doesn't exist, serve our demo page as fallback
+        return demo_page()
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8001)
