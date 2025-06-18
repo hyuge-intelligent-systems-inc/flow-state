@@ -362,8 +362,491 @@ def get_or_create_user_profile(user_id: str) -> UserProfile:
 
 # API Routes
 
+def demo_page():
+    """Generate the FlowState demo page HTML"""
+    return """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlowState - Live Demo</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%);
+            border-radius: 15px;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            color: white;
+        }
+        h1 {
+            color: #1F2937;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #6B7280;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+        }
+        .philosophy {
+            background: #F0F9FF;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #3B82F6;
+            margin: 20px 0;
+        }
+        .demo-section {
+            background: #F9FAFB;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .btn {
+            background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin: 5px;
+            transition: transform 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        .btn-secondary {
+            background: #6B7280;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .status.success {
+            background: #ECFDF5;
+            border: 1px solid #10B981;
+            color: #065F46;
+        }
+        .status.error {
+            background: #FEF2F2;
+            border: 1px solid #EF4444;
+            color: #B91C1C;
+        }
+        .status.info {
+            background: #EFF6FF;
+            border: 1px solid #3B82F6;
+            color: #1E40AF;
+        }
+        .result {
+            background: #F3F4F6;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-family: monospace;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .workflow {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .step {
+            background: white;
+            border: 2px solid #E5E7EB;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            transition: border-color 0.3s;
+        }
+        .step.active {
+            border-color: #3B82F6;
+            background: #EFF6FF;
+        }
+        .step.completed {
+            border-color: #10B981;
+            background: #ECFDF5;
+        }
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .metric {
+            text-align: center;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #E5E7EB;
+        }
+        .metric-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #3B82F6;
+        }
+        .metric-label {
+            color: #6B7280;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">⚡</div>
+            <h1>FlowState</h1>
+            <p class="subtitle">Human-Centered Productivity Intelligence</p>
+        </div>
+
+        <div class="philosophy">
+            <h3>🧠 The Philosophy</h3>
+            <p>Most productivity apps assume you need to be optimized. FlowState assumes you need to be understood.</p>
+        </div>
+
+        <div class="status info" id="health-status">
+            🔄 Checking system health...
+        </div>
+
+        <div class="demo-section">
+            <h3>🚀 Live FlowState Demo</h3>
+            <p>Experience the complete FlowState workflow:</p>
+            
+            <div class="workflow">
+                <div class="step" id="step-1">
+                    <div>👤</div>
+                    <h4>Create User</h4>
+                    <p>Generate demo account</p>
+                </div>
+                <div class="step" id="step-2">
+                    <div>▶️</div>
+                    <h4>Start Session</h4>
+                    <p>Begin productivity tracking</p>
+                </div>
+                <div class="step" id="step-3">
+                    <div>⏸️</div>
+                    <h4>End Session</h4>
+                    <p>Complete with feedback</p>
+                </div>
+                <div class="step" id="step-4">
+                    <div>📊</div>
+                    <h4>View Analytics</h4>
+                    <p>See insights & patterns</p>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin: 20px 0;">
+                <button class="btn" onclick="startDemo()">🎯 Start Complete Demo</button>
+                <button class="btn btn-secondary" onclick="resetDemo()">🔄 Reset Demo</button>
+            </div>
+
+            <div class="metrics" id="metrics" style="display: none;">
+                <div class="metric">
+                    <div class="metric-value" id="total-time">0m</div>
+                    <div class="metric-label">Total Focus Time</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value" id="sessions">0</div>
+                    <div class="metric-label">Sessions Today</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value" id="energy">0/5</div>
+                    <div class="metric-label">Avg Energy</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value" id="focus">0/5</div>
+                    <div class="metric-label">Avg Focus</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h3>🔧 Manual Testing</h3>
+            <button class="btn" onclick="createUser()">Create Demo User</button>
+            <button class="btn" onclick="startSession()">Start Session</button>
+            <button class="btn" onclick="endSession()">End Session</button>
+            <button class="btn" onclick="getDailySummary()">Get Daily Summary</button>
+            <button class="btn" onclick="getInsights()">Get Insights</button>
+        </div>
+
+        <div id="results"></div>
+
+        <div class="demo-section">
+            <h3>✨ FlowState Principles in Action</h3>
+            <ul style="text-align: left; color: #374151;">
+                <li><strong>User Agency:</strong> All suggestions can be ignored or modified</li>
+                <li><strong>Honest Limitations:</strong> Confidence levels on all insights</li>
+                <li><strong>Privacy First:</strong> Your data belongs to you</li>
+                <li><strong>Progressive Complexity:</strong> Features unlock based on usage</li>
+                <li><strong>Individual Differences:</strong> Accommodates various work styles</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let currentUserId = null;
+        let currentStep = 0;
+
+        // Check system health on load
+        window.onload = async function() {
+            await checkHealth();
+        };
+
+        async function checkHealth() {
+            try {
+                const response = await fetch('/api/health');
+                const data = await response.json();
+                document.getElementById('health-status').innerHTML = `
+                    ✅ System Status: <strong>${data.status}</strong> | 
+                    Active Users: ${data.active_users} | 
+                    ${new Date(data.timestamp).toLocaleTimeString()}
+                `;
+                document.getElementById('health-status').className = 'status success';
+            } catch (error) {
+                document.getElementById('health-status').innerHTML = '❌ Backend not responding';
+                document.getElementById('health-status').className = 'status error';
+            }
+        }
+
+        function updateStep(step) {
+            // Reset all steps
+            for (let i = 1; i <= 4; i++) {
+                const stepEl = document.getElementById(`step-${i}`);
+                stepEl.className = 'step';
+                if (i < step) stepEl.className = 'step completed';
+                if (i === step) stepEl.className = 'step active';
+            }
+        }
+
+        function showResult(title, data, isError = false) {
+            const results = document.getElementById('results');
+            const className = isError ? 'status error' : 'status success';
+            results.innerHTML = `
+                <div class="${className}">
+                    <strong>${title}</strong>
+                </div>
+                <div class="result">${JSON.stringify(data, null, 2)}</div>
+            `;
+        }
+
+        async function startDemo() {
+            currentStep = 1;
+            updateStep(1);
+            await sleep(500);
+            
+            await createUser();
+            await sleep(1000);
+            
+            updateStep(2);
+            await startSession();
+            await sleep(3000);
+            
+            updateStep(3);
+            await endSession();
+            await sleep(1000);
+            
+            updateStep(4);
+            await getDailySummary();
+            
+            // Show metrics
+            document.getElementById('metrics').style.display = 'grid';
+        }
+
+        async function resetDemo() {
+            currentUserId = null;
+            currentStep = 0;
+            updateStep(0);
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('metrics').style.display = 'none';
+            showResult('Demo Reset', { message: 'Ready to start fresh!' });
+        }
+
+        async function createUser() {
+            try {
+                const response = await fetch('/api/demo/sample-user');
+                const data = await response.json();
+                currentUserId = data.user_id;
+                
+                showResult('✅ Demo User Created', {
+                    user_id: data.user_id,
+                    username: data.username,
+                    sample_sessions: data.sample_sessions
+                });
+                
+                return data;
+            } catch (error) {
+                showResult('❌ Error Creating User', { error: error.message }, true);
+                throw error;
+            }
+        }
+
+        async function startSession() {
+            if (!currentUserId) {
+                await createUser();
+            }
+
+            try {
+                const response = await fetch(`/api/users/${currentUserId}/sessions/start`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        task_description: 'FlowState Live Demo Session',
+                        category: 'work',
+                        estimated_minutes: 30,
+                        energy_level: 4
+                    })
+                });
+                const data = await response.json();
+                
+                showResult('▶️ Session Started', {
+                    session_started: data.session_started,
+                    entry_id: data.entry_id,
+                    system_status: data.system_status
+                });
+                
+                return data;
+            } catch (error) {
+                showResult('❌ Error Starting Session', { error: error.message }, true);
+                throw error;
+            }
+        }
+
+        async function endSession() {
+            if (!currentUserId) {
+                showResult('❌ No Active User', { message: 'Please create a user first' }, true);
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/users/${currentUserId}/sessions/end`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_notes: 'Excellent FlowState demo session!',
+                        energy_level: 4,
+                        focus_quality: 5,
+                        interruptions: 0,
+                        satisfaction: 5
+                    })
+                });
+                const data = await response.json();
+                
+                showResult('⏸️ Session Ended', {
+                    task: data.session_summary.task,
+                    duration: `${data.session_summary.duration_minutes} minutes`,
+                    focus_quality: `${data.session_summary.focus_quality}/5`,
+                    satisfaction: `${data.session_summary.satisfaction}/5`
+                });
+                
+                return data;
+            } catch (error) {
+                showResult('❌ Error Ending Session', { error: error.message }, true);
+                throw error;
+            }
+        }
+
+        async function getDailySummary() {
+            if (!currentUserId) {
+                showResult('❌ No Active User', { message: 'Please create a user first' }, true);
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/users/${currentUserId}/summary/daily`);
+                const data = await response.json();
+                
+                showResult('📊 Daily Summary', {
+                    date: data.date,
+                    total_minutes: data.total_minutes,
+                    sessions: data.entries_count,
+                    average_energy: data.average_energy?.toFixed(1),
+                    average_focus: data.average_focus?.toFixed(1),
+                    categories: Object.keys(data.categories || {})
+                });
+
+                // Update metrics display
+                document.getElementById('total-time').textContent = `${data.total_minutes}m`;
+                document.getElementById('sessions').textContent = data.entries_count;
+                document.getElementById('energy').textContent = `${data.average_energy?.toFixed(1) || 0}/5`;
+                document.getElementById('focus').textContent = `${data.average_focus?.toFixed(1) || 0}/5`;
+                
+                return data;
+            } catch (error) {
+                showResult('❌ Error Getting Summary', { error: error.message }, true);
+                throw error;
+            }
+        }
+
+        async function getInsights() {
+            if (!currentUserId) {
+                showResult('❌ No Active User', { message: 'Please create a user first' }, true);
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/users/${currentUserId}/insights?timeframe_days=7`);
+                const data = await response.json();
+                
+                showResult('🧠 Productivity Insights', {
+                    active_days: data.time_tracking_insights?.active_days || 0,
+                    total_tracked_time: data.time_tracking_insights?.total_tracked_time || 0,
+                    average_daily_time: data.time_tracking_insights?.average_daily_time || 0,
+                    data_sources: data.summary?.data_sources || [],
+                    limitations: data.limitations?.slice(0, 2) || []
+                });
+                
+                return data;
+            } catch (error) {
+                showResult('❌ Error Getting Insights', { error: error.message }, true);
+                throw error;
+            }
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+    </script>
+</body>
+</html>
+    """
+
 @app.get("/demo", response_class=HTMLResponse)
-async def demo_page():
+async def demo_route():
+    """Serve the demo page"""
+    return demo_page()
+
+# API Routes
+
+@app.get("/")
+async def root():
     """Serve the FlowState demo page"""
     return """
 <!DOCTYPE html>
