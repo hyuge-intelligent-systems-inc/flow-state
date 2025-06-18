@@ -6,10 +6,10 @@ const Layout = ({ children, user, onLogout }) => {
   const location = useLocation();
 
   const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: '📊' },
-    { name: 'Time Tracker', href: '/track', icon: '⏱️' },
-    { name: 'Analytics', href: '/analytics', icon: '📈' },
-    { name: 'Profile', href: '/profile', icon: '👤' },
+    { name: 'Dashboard', href: '/dashboard', icon: 'D' },
+    { name: 'Time Tracker', href: '/track', icon: 'T' },
+    { name: 'Analytics', href: '/analytics', icon: 'A' },
+    { name: 'Profile', href: '/profile', icon: 'P' },
   ];
 
   const isActive = (path) => {
