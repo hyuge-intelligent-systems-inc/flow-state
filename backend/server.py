@@ -299,17 +299,17 @@ app.mount("/static", StaticFiles(directory="/app/frontend/build/static"), name="
 @app.get("/{full_path:path}")
 async def serve_react_app(full_path: str):
     """Serve React app for frontend routes"""
-    # If it's an API route, let it pass through to raise 404
-    if full_path.startswith("api/"):
-        raise HTTPException(status_code=404, detail="API endpoint not found")
-    
-    # For demo route, serve the demo page
+    # For demo route, serve the demo page first
     if full_path == "demo" or full_path == "demo/":
         return demo_page()
     
-    # For docs and openapi
+    # For docs and openapi - let FastAPI handle these
     if full_path in ["docs", "openapi.json", "redoc"]:
         raise HTTPException(status_code=404, detail="Not found")
+    
+    # If it's an API route, let it pass through to raise 404
+    if full_path.startswith("api/"):
+        raise HTTPException(status_code=404, detail="API endpoint not found")
     
     # Try to serve React build files
     try:
