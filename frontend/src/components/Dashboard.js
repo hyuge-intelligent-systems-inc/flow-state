@@ -247,7 +247,7 @@ const Dashboard = ({ user }) => {
               <div className="flex items-start">
                 <div className="flex-shrink-0">
                   <div className="w-8 h-8 bg-flow-blue bg-opacity-10 rounded-lg flex items-center justify-center">
-                    <span className="text-flow-blue">📈</span>
+                    <span className="text-flow-blue text-sm">+</span>
                   </div>
                 </div>
                 <div className="ml-3">
