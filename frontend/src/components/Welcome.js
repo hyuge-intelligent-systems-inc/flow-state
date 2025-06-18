@@ -122,7 +122,7 @@ const Welcome = ({ onUserLogin }) => {
 
         <div className="mt-6 text-center">
           <p className="text-xs text-flow-gray">
-            ✨ Privacy-first • 🔒 Your data, your control • 🚀 Progressive complexity
+            Privacy-first | Your data, your control | Progressive complexity
           </p>
         </div>
       </div>
