@@ -767,7 +767,7 @@ def demo_page():
         </div>
 
         <div class="demo-section">
-            <h3>🔧 Manual Testing</h3>
+            <h3>Manual Testing</h3>
             <button class="btn" onclick="createUser()">Create Demo User</button>
             <button class="btn" onclick="startSession()">Start Session</button>
             <button class="btn" onclick="endSession()">End Session</button>
