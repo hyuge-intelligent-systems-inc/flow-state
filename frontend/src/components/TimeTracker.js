@@ -49,26 +49,35 @@ const TimeTracker = ({ user }) => {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       const recognitionInstance = new SpeechRecognition();
       
-      recognitionInstance.continuous = true;
-      recognitionInstance.interimResults = true;
+      recognitionInstance.continuous = false; // Change to false for better command recognition
+      recognitionInstance.interimResults = false; // Change to false to get final results only
       recognitionInstance.lang = 'en-US';
+      recognitionInstance.maxAlternatives = 1;
       
       recognitionInstance.onresult = (event) => {
-        const last = event.results.length - 1;
-        const command = event.results[last][0].transcript.toLowerCase().trim();
-        
-        if (event.results[last].isFinal) {
-          processVoiceCommand(command);
-        }
+        const transcript = event.results[0][0].transcript.toLowerCase().trim();
+        console.log('Voice command received:', transcript);
+        processVoiceCommand(transcript);
       };
       
       recognitionInstance.onerror = (event) => {
         console.error('Speech recognition error:', event.error);
         setIsListening(false);
+        
+        // Provide user feedback based on error type
+        if (event.error === 'no-speech') {
+          alert('No speech detected. Please try again.');
+        } else if (event.error === 'not-allowed') {
+          alert('Microphone access denied. Please allow microphone access to use voice commands.');
+        }
       };
       
       recognitionInstance.onend = () => {
         setIsListening(false);
+      };
+      
+      recognitionInstance.onstart = () => {
+        console.log('Speech recognition started');
       };
       
       setRecognition(recognitionInstance);
@@ -76,39 +85,62 @@ const TimeTracker = ({ user }) => {
   };
 
   const processVoiceCommand = (command) => {
-    console.log('Voice command:', command);
+    console.log('Processing voice command:', command);
     
-    // Check for start command
-    if (command.includes('start') || command.includes('begin')) {
-      if (sessionForm.main_tag) {
+    // Check for start command first
+    if (command.includes('start') || command.includes('begin') || command === 'go') {
+      if (sessionForm.main_tag.trim()) {
+        console.log('Starting session via voice command');
         handleStartSession();
+        return;
+      } else {
+        alert('Please set a main tag first before starting a session');
         return;
       }
     }
     
-    // Parse tag commands like "work client project" or "learning react"
-    const words = command.split(' ');
+    // Parse tag commands - look for patterns like "work client project" or "learning react tutorial"
+    const words = command.split(' ').filter(word => word.length > 0);
+    
     if (words.length >= 1) {
       const mainTag = words[0];
-      const subTag = words.slice(1).join('-');
+      const subTagWords = words.slice(1);
+      const subTag = subTagWords.length > 0 ? subTagWords.join('-') : '';
       
-      // Check if it's a valid tag
-      const isValidMainTag = commonTags.some(tag => tag.main.includes(mainTag)) || 
-                            userTags.some(tag => tag.includes(mainTag));
+      console.log('Parsed tags:', { mainTag, subTag });
       
-      if (isValidMainTag) {
+      // Validate main tag against known tags or common tags
+      const isValidMainTag = 
+        userTags.some(tag => tag.toLowerCase().includes(mainTag.toLowerCase())) || 
+        commonTags.some(tag => tag.main.toLowerCase().includes(mainTag.toLowerCase())) ||
+        ['work', 'learning', 'exercise', 'creative', 'admin', 'wellness', 'social', 'personal'].includes(mainTag.toLowerCase());
+      
+      if (isValidMainTag || words.length >= 2) { // Accept if valid or if there are multiple words
         setSessionForm(prev => ({
           ...prev,
-          main_tag: mainTag,
-          sub_tag: subTag || ''
+          main_tag: mainTag.toLowerCase(),
+          sub_tag: subTag.toLowerCase()
         }));
+        
+        // Provide feedback to user
+        const tagDisplay = subTag ? `#${mainTag}/${subTag}` : `#${mainTag}`;
+        console.log('Tags set via voice:', tagDisplay);
+        
+        // Auto-start after a brief delay if the form is ready
+        setTimeout(() => {
+          if (sessionForm.main_tag || mainTag) {
+            console.log('Tags set. Say "start" to begin the session.');
+          }
+        }, 500);
+      } else {
+        console.log('Unrecognized voice command:', command);
       }
     }
   };
 
   const toggleVoiceRecognition = () => {
     if (!recognition) {
-      alert('Speech recognition is not supported in your browser');
+      alert('Speech recognition is not supported in your browser. Please use Chrome, Edge, or Safari.');
       return;
     }
     
@@ -116,8 +148,13 @@ const TimeTracker = ({ user }) => {
       recognition.stop();
       setIsListening(false);
     } else {
-      recognition.start();
-      setIsListening(true);
+      try {
+        recognition.start();
+        setIsListening(true);
+      } catch (error) {
+        console.error('Failed to start speech recognition:', error);
+        alert('Failed to start voice recognition. Please check your microphone permissions.');
+      }
     }
   };
 
