@@ -1279,32 +1279,47 @@ async def get_patterns(user_id: str):
         raise HTTPException(status_code=404, detail="User not found")
     
     engine = get_or_create_user_engine(user_id)
+    patterns = engine.get_patterns()
     
-    if len(engine.time_tracker.entries) < 5:
-        return {
-            "message": "Not enough data for pattern analysis",
-            "required_sessions": 5,
-            "current_sessions": len(engine.time_tracker.entries)
-        }
+    return patterns
+
+# Tag Management Endpoints
+@app.get("/api/users/{user_id}/tags")
+async def get_user_tags(user_id: str):
+    """Get all tags the user has used"""
+    if user_id not in users_db:
+        raise HTTPException(status_code=404, detail="User not found")
     
-    patterns = engine.pattern_analyzer.analyze_time_patterns(
-        engine.time_tracker.entries,
-        timeframe_days=30
-    )
+    engine = get_or_create_user_engine(user_id)
+    tags = engine.time_tracker.get_user_tags()
     
-    # Convert patterns to serializable format
-    patterns_dict = {}
-    for name, pattern in patterns.items():
-        patterns_dict[name] = {
-            "description": pattern.description,
-            "confidence": pattern.confidence.value,
-            "sample_size": pattern.sample_size,
-            "limitations": pattern.limitations,
-            "user_interpretation_needed": pattern.user_interpretation_needed,
-            "supporting_data": pattern.supporting_data
-        }
+    return {
+        "user_tags": tags,
+        "count": len(tags),
+        "suggestion": "Use tags that feel natural to describe your work"
+    }
+
+@app.get("/api/users/{user_id}/tags/analytics")
+async def get_tag_analytics(user_id: str, timeframe_days: int = 30):
+    """Get detailed analytics based on user's tagging patterns"""
+    if user_id not in users_db:
+        raise HTTPException(status_code=404, detail="User not found")
     
-    return {"patterns": patterns_dict}
+    engine = get_or_create_user_engine(user_id)
+    analytics = engine.time_tracker.get_tag_analytics(timeframe_days)
+    
+    return analytics
+
+@app.get("/api/users/{user_id}/estimation-accuracy")
+async def get_estimation_accuracy(user_id: str):
+    """Get user's time estimation accuracy"""
+    if user_id not in users_db:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    engine = get_or_create_user_engine(user_id)
+    accuracy = engine.time_tracker.get_estimation_accuracy()
+    
+    return accuracy
 
 # Self-Discovery Features
 @app.post("/api/users/{user_id}/self-discovery/start")
